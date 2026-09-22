@@ -5,6 +5,11 @@ Top-level conveniences::
     from AnalystStack import io, PythonFormatter, SQLFormatter
     from AnalystStack import to_tidy, from_tidy, compare_dataframes, summarize
     from AnalystStack import Validator, not_null, unique, in_range, is_in, matches_regex, has_dtype, custom
+    from AnalystStack import row_count_between, no_duplicate_rows, is_fresh, no_outliers
+    from AnalystStack import ReportBuilder
+
+Schema, drift, and referential-integrity checks live in their own
+``AnalystStack.validate`` submodules — see that package's docstring for the full list.
 
 Warehouse connectors live under ``AnalystStack.connectors`` and are imported
 explicitly (they require optional extras such as ``analyststack[bigquery]``)::
@@ -17,6 +22,7 @@ from importlib.metadata import PackageNotFoundError, version
 from AnalystStack.compare import ComparisonResult, compare_dataframes, summarize
 from AnalystStack.format import PythonFormatter, SQLFormatter
 from AnalystStack.io import io
+from AnalystStack.report import ReportBuilder
 from AnalystStack.tidy import from_tidy, to_tidy
 from AnalystStack.validate import (
     CheckResult,
@@ -26,9 +32,13 @@ from AnalystStack.validate import (
     custom,
     has_dtype,
     in_range,
+    is_fresh,
     is_in,
     matches_regex,
+    no_duplicate_rows,
+    no_outliers,
     not_null,
+    row_count_between,
     unique,
 )
 
@@ -46,6 +56,7 @@ __all__ = [
     "compare_dataframes",
     "summarize",
     "ComparisonResult",
+    "ReportBuilder",
     "Validator",
     "Rule",
     "CheckResult",
@@ -56,6 +67,10 @@ __all__ = [
     "is_in",
     "matches_regex",
     "has_dtype",
+    "row_count_between",
+    "no_duplicate_rows",
+    "is_fresh",
+    "no_outliers",
     "custom",
     "__version__",
 ]

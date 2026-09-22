@@ -7,9 +7,10 @@
 [![Docs](https://img.shields.io/badge/docs-zensical-blue.svg)](https://abisheakjacob.github.io/AnalystStack/)
 
 **AnalystStack** is a Python toolkit of reusable helpers for the work data analysts do every
-day: connecting to data warehouses, reading and writing files, rendering SQL from templates,
-and formatting code. It replaces the pile of copy-pasted snippets every analyst accumulates
-with a small, tested, `pip install`-able package.
+day: connecting to data warehouses, validating and reporting on data quality, reading and
+writing files, rendering SQL from templates, and formatting code. It replaces the pile of
+copy-pasted snippets every analyst accumulates with a small, tested, `pip install`-able
+package.
 
 📖 **Full documentation:** <https://abisheakjacob.github.io/AnalystStack/>
 
@@ -19,8 +20,11 @@ with a small, tested, `pip install`-able package.
 # From PyPI
 pip install AnalystStack
 
-# With the BigQuery connector
+# With a warehouse connector -- also available: postgres, databricks, duckdb, snowflake
 pip install "AnalystStack[bigquery]"
+
+# With optional validation extras -- scipy-backed drift tests, or a pandera bridge
+pip install "AnalystStack[stats,pandera]"
 
 # From GitHub
 pip install "git+https://github.com/AbisheakJacob/AnalystStack"
@@ -48,24 +52,66 @@ from AnalystStack.connectors import GoogleBigQueryConnector
 
 bq = GoogleBigQueryConnector(gcp_project_id="my-project")
 df = bq.read_data("SELECT * FROM dataset.table LIMIT 100")
-fill = bq.get_fillrate("dataset", "table")   # column completion %
+profile = bq.profile_columns("dataset", "table")   # DataFrame: dtype, nullability, fill rate %, ...
+```
+
+```python
+from AnalystStack import ReportBuilder, Validator, not_null, unique
+
+validation = Validator([not_null("price"), unique("id")]).validate(df)
+report = ReportBuilder("Table Data Quality Report").add_validation(validation).build()
+report.write("data_quality_report.md")
 ```
 
 ## Modules
 
 ### Connectors
 
-Read, write and profile tables in cloud data warehouses ([docs](https://abisheakjacob.github.io/AnalystStack/connectors/)).
+Read, write and profile tables in cloud data warehouses — BigQuery, Postgres, Databricks,
+Snowflake, and embedded/local DuckDB ([docs](https://abisheakjacob.github.io/AnalystStack/connectors/)).
+Every metadata method returns a DataFrame with the same columns across every backend, even
+when a given warehouse can't cheaply populate one of them.
 
 | Method | Description |
 | ------ | ----------- |
 | `read_data(query)` | Run a query and return a DataFrame. |
-| `write_data(df, dataset_id, table_id, if_exists="append")` | Write a DataFrame to a table. |
-| `get_all_table_names(dataset_id)` | List tables in a dataset. |
-| `get_datatypes(dataset_id, table_id)` | `{column: data_type}` for a table. |
-| `get_fillrate(dataset_id, table_id)` | `{column: % non-null}` for a table. |
+| `write_data(df, schema, table_id, if_exists="append")` | Write a DataFrame to a table. |
+| `list_tables(schema)` | DataFrame of tables, with row count / size / created / last-altered. |
+| `list_columns(schema, table_id)` | DataFrame of a table's columns: name, position, dtype, nullability. |
+| `profile_columns(schema, table_id)` | `list_columns` plus fill rate / null counts per column. |
 
-Google BigQuery is supported today; a Databricks connector is in progress.
+### Validation
+
+Attach declarative sanity checks to a DataFrame, without a heavyweight schema library
+([docs](https://abisheakjacob.github.io/AnalystStack/validate/)).
+
+| Function / class | Description |
+| ----------------- | ----------- |
+| `not_null` / `unique` / `in_range` / `is_in` / `matches_regex` / `has_dtype` | Per-column rule factories. |
+| `row_count_between` / `no_duplicate_rows` / `is_fresh` / `no_outliers` | Whole-frame / statistical rule factories. |
+| `Validator([...]).validate(df)` / `.enforce(df)` | Run every rule; get a report, or raise on failure. |
+| `validate.schema.check_schema` / `enforce_schema` | Column existence / order / dtype checks. |
+| `validate.drift.compare_dataframe_drift` | Statistical drift between two snapshots of a DataFrame. |
+| `validate.referential.check_referential_integrity` | Foreign-key-style checks between two DataFrames. |
+
+### Reporting
+
+Compose validation results, comparisons, and connector metadata into one deliverable — no
+scheduling, just a call ([docs](https://abisheakjacob.github.io/AnalystStack/report/)).
+
+```python
+from AnalystStack import ReportBuilder
+
+report = ReportBuilder("Orders Data Quality Report").add_validation(validation).build()
+report.write("orders_report.xlsx", format="excel")
+```
+
+### Tidy data & Compare
+
+`to_tidy` / `from_tidy` reshape DataFrames between wide and long
+([docs](https://abisheakjacob.github.io/AnalystStack/tidy/)); `compare_dataframes` /
+`summarize` diff two DataFrames and profile one in a single call
+([docs](https://abisheakjacob.github.io/AnalystStack/compare/)).
 
 ### IO
 
@@ -85,13 +131,14 @@ Format and lint code from Python or the CLI ([docs](https://abisheakjacob.github
 
 | Class | Description |
 | ----- | ----------- |
-| `PythonFormatter` | Format and syntax-check Python with Black + `ast`. |
-| `SQLFormatter` | Format and lint SQL with SQLFluff. |
+| `PythonFormatter` | Format and syntax-check Python with Ruff + `ast`. |
+| `SQLFormatter` | Format and lint SQL with SQLFluff (any dialect), at a configurable `FormattingLevel` from whitespace-only up to a `sqlglot`-powered structural rewrite. |
 
 ```bash
 # CLI
-analyststack format python path/to/file.py          # format in place
-analyststack format sql    path/to/query.sql --lint  # lint only
+analyststack format python path/to/file.py                                    # format in place
+analyststack format sql    path/to/query.sql --lint                           # lint only
+analyststack format sql    path/to/query.sql --dialect postgres --level low   # light touch-up only
 ```
 
 ## Development

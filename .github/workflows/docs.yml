@@ -5,6 +5,8 @@ on:
     branches: [main, master]
     paths:
       - "docs/**"
+      - "zensical.toml"
+      - "src/AnalystStack/**"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
@@ -31,14 +33,13 @@ jobs:
         with:
           python-version: "3.x"
           cache: pip
-      - name: Install Zensical
-        run: pip install zensical
+      - name: Install docs dependencies
+        run: pip install ".[bigquery,postgres,databricks,docs]"
       - name: Build site
-        working-directory: docs
-        run: zensical build --clean
+        run: zensical build --strict --clean
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/site
+          path: site
       - id: deployment
         uses: actions/deploy-pages@v4

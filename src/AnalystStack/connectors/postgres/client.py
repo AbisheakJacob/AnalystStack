@@ -2,15 +2,27 @@
 
 Isolates authentication and API connection logic"""
 
-from loguru import logger
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL, Engine
 
 from AnalystStack.exceptions.errors import ConnectionError
+from AnalystStack.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class PostgresClientWrapper:
-    """Wraps a SQLAlchemy engine (via the ``psycopg2`` driver) securely"""
+    """Builds and wraps a SQLAlchemy ``Engine`` for Postgres via the ``psycopg2`` driver.
+
+    Owns the low-level connection: constructing the SQLAlchemy ``URL``, creating the
+    ``Engine``, and eagerly opening a test connection so failures surface immediately at
+    construction time rather than on the first query.
+
+    Attributes:
+        engine: The underlying SQLAlchemy ``Engine``, used by
+            `AnalystStack.connectors.postgres.query.QueryManager` and the metadata/profiling
+            managers to run queries.
+    """
 
     def __init__(
         self,
@@ -20,7 +32,20 @@ class PostgresClientWrapper:
         user: str | None = None,
         password: str | None = None,
     ):
+        """Creates and validates the SQLAlchemy engine for a Postgres database.
 
+        Args:
+            host: The Postgres server hostname.
+            port: The Postgres server port.
+            database: The database to connect to.
+            user: The username to authenticate with.
+            password: The password to authenticate with.
+
+        Raises:
+            AnalystStack.exceptions.errors.ConnectionError: If constructing the engine or
+                opening the test connection fails (e.g. invalid credentials or an
+                unreachable host).
+        """
         self.host = host
         self.port = port
         self.database = database
@@ -46,4 +71,5 @@ class PostgresClientWrapper:
 
     @property
     def engine(self) -> Engine:
+        """The underlying SQLAlchemy `Engine` used to run reads and writes."""
         return self._engine

@@ -1,0 +1,150 @@
+# ============================================================================
+#
+# AnalystStack documentation site configuration (Zensical).
+#
+# ============================================================================
+
+[project]
+
+site_name = "AnalystStack Documentation"
+site_description = "A Python toolkit of reusable helpers for data analysts: warehouse connectors, data validation and reporting, IO, templating, DataFrame utilities, and code formatting."
+site_author = "Abisheak Jacob J"
+site_url = "https://abisheakjacob.github.io/AnalystStack/"
+
+repo_url = "https://github.com/AbisheakJacob/AnalystStack"
+repo_name = "AbisheakJacob/AnalystStack"
+
+copyright = """
+Copyright &copy; 2026 Abisheak Jacob J
+"""
+
+# Config lives at the repo root; docs sources and the built site are kept in
+# their own top-level folders rather than nested under this file.
+docs_dir = "docs"
+site_dir = "site"
+
+nav = [
+  { "Home" = "index.md" },
+  { "Connectors" = "connectors.md" },
+  { "IO" = "io.md" },
+  { "Tidy data" = "tidy.md" },
+  { "Compare & summarize" = "compare.md" },
+  { "Validation" = "validate.md" },
+  { "Reporting" = "report.md" },
+  { "Formatting" = "formatting.md" },
+  { "Roadmap / Next steps" = "next-steps.md" },
+]
+
+# ----------------------------------------------------------------------------
+# Plugins
+# ----------------------------------------------------------------------------
+
+# API reference pages render live from docstrings via `::: AnalystStack.module`
+# directives in docs/*.md -- see https://zensical.org/docs/setup/extensions/mkdocstrings/
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["src"]
+inventories = ["https://docs.python.org/3/objects.inv"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "google"
+docstring_section_style = "table"
+show_source = false
+show_root_heading = true
+show_root_full_path = false
+merge_init_into_class = true
+separate_signature = true
+show_signature_annotations = true
+members_order = "source"
+heading_level = 2
+
+# ----------------------------------------------------------------------------
+# Theme
+# ----------------------------------------------------------------------------
+[project.theme]
+
+[project.theme.icon]
+logo = "lucide/layers"
+repo = "fontawesome/brands/github"
+
+language = "en"
+
+features = [
+    "announce.dismiss",
+    "content.action.edit",
+    "content.action.view",
+    "content.code.annotate",
+    "content.code.copy",
+    "content.code.select",
+    "content.footnote.tooltips",
+    "content.tabs.link",
+    "content.tooltips",
+    "navigation.footer",
+    "navigation.indexes",
+    "navigation.instant",
+    "navigation.instant.prefetch",
+    "navigation.path",
+    "navigation.sections",
+    "navigation.top",
+    "navigation.tracking",
+    "search.highlight",
+]
+
+[[project.theme.palette]]
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+# ----------------------------------------------------------------------------
+# Extra
+# ----------------------------------------------------------------------------
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/AbisheakJacob/AnalystStack"
+name = "AnalystStack on GitHub"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/python"
+link = "https://pypi.org/project/AnalystStack/"
+name = "AnalystStack on PyPI"
+
+# ----------------------------------------------------------------------------
+# Markdown extensions
+# ----------------------------------------------------------------------------
+[project.markdown_extensions.abbr]
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.def_list]
+[project.markdown_extensions.footnotes]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.toc]
+permalink = true
+[project.markdown_extensions.pymdownx.betterem]
+[project.markdown_extensions.pymdownx.caret]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.emoji]
+emoji_generator = "zensical.extensions.emoji.to_svg"
+emoji_index = "zensical.extensions.emoji.twemoji"
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.keys]
+[project.markdown_extensions.pymdownx.magiclink]
+[project.markdown_extensions.pymdownx.mark]
+[project.markdown_extensions.pymdownx.smartsymbols]
+[project.markdown_extensions.pymdownx.superfences]
+custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" }
+]
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+combine_header_slug = true
+[project.markdown_extensions.pymdownx.tasklist]
+custom_checkbox = true
+[project.markdown_extensions.pymdownx.tilde]

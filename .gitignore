@@ -26,9 +26,8 @@ htmlcov/
 coverage.xml
 
 # --- Documentation build output (Zensical) ---
-docs/site/
-docs/.cache/
 site/
+.cache/
 
 # --- IDE / editor ---
 .idea/

@@ -2,22 +2,17 @@
 dialect = bigquery
 templater = jinja
 max_line_length = 120
-
-# Ignore rules you don't care about (e.g., L031 = table aliases)
 exclude_rules = L031
+# Ignore rules you don't care about (e.g., L031 = table aliases)
 
 [sqlfluff:indentation]
+implicit_indents = allow
 indent_unit = space
 tab_space_size = 4
 
 [sqlfluff:rules:capitalisation.keywords]
 # Force SELECT, FROM, WHERE to be uppercase
 capitalisation_policy = upper
-
-[sqlfluff]
-dialect = bigquery
-templater = jinja
-max_line_length = 120
 
 # Sqlfluff doesn't support treating commas before cte and in select statement separately, so ignoring them
 [sqlfluff:layout:type:comma]

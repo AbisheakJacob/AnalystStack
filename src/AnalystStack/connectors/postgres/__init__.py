@@ -1,3 +1,7 @@
+"""PostgreSQL connector: `PostgresConnector` and its supporting client/query/metadata/
+profiling managers.
+"""
+
 # import the main class using a relative import (.)
 from .connector import PostgresConnector
 

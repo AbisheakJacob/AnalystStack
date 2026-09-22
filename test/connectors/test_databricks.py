@@ -134,24 +134,85 @@ def test_write_data_rejects_invalid_if_exists(connector, sample_dataframe):
 # ---------------------------------------------------------
 
 
-def test_get_all_table_names(connector, mock_engine):
-    tables_df = pd.DataFrame({"table_name": ["orders", "customers"]})
-    with patch("AnalystStack.connectors.databricks.query.pd.read_sql", return_value=tables_df):
-        result = connector.get_all_table_names(SCHEMA)
-    assert result == ["orders", "customers"]
+def test_list_tables(connector, mock_engine):
+    raw_tables_df = pd.DataFrame(
+        {
+            "table_catalog": [CATALOG],
+            "table_schema": [SCHEMA],
+            "table_name": ["orders"],
+            "table_type": ["BASE TABLE"],
+            "created": [pd.Timestamp("2026-01-01", tz="UTC")],
+            "last_altered": [pd.Timestamp("2026-02-01", tz="UTC")],
+        }
+    )
+    with patch("AnalystStack.connectors.databricks.query.pd.read_sql", return_value=raw_tables_df):
+        result = connector.list_tables(SCHEMA)
+
+    assert list(result.columns) == [
+        "table_catalog",
+        "table_schema",
+        "table_name",
+        "table_type",
+        "row_count",
+        "size_bytes",
+        "created",
+        "last_altered",
+    ]
+    assert result["row_count"].isna().all()
+    assert result["size_bytes"].isna().all()
+    assert result["table_name"].tolist() == ["orders"]
 
 
-def test_get_datatypes(connector, mock_engine):
-    schema_df = pd.DataFrame({"column_name": ["id", "name", "price"], "data_type": ["BIGINT", "STRING", "DOUBLE"]})
-    with patch("AnalystStack.connectors.databricks.query.pd.read_sql", return_value=schema_df):
-        result = connector.get_datatypes(SCHEMA, "products")
-    assert result == {"id": "BIGINT", "name": "STRING", "price": "DOUBLE"}
+def test_list_tables_rejects_invalid_identifier(connector):
+    with pytest.raises(ValidationError):
+        connector.list_tables("bad-schema!")
 
 
-def test_get_fillrate(connector, mock_engine):
-    schema_df = pd.DataFrame({"column_name": ["id", "name"], "data_type": ["BIGINT", "STRING"]})
-    fillrate_df = pd.DataFrame({"id": [100.0], "name": [95.5]})
+def test_list_columns(connector, mock_engine):
+    columns_df = pd.DataFrame(
+        {
+            "table_schema": [SCHEMA] * 3,
+            "table_name": ["products"] * 3,
+            "column_name": ["id", "name", "price"],
+            "ordinal_position": [1, 2, 3],
+            "data_type": ["BIGINT", "STRING", "DOUBLE"],
+            "is_nullable": ["NO", "YES", "YES"],
+            "column_default": [None, None, None],
+        }
+    )
+    with patch("AnalystStack.connectors.databricks.query.pd.read_sql", return_value=columns_df):
+        result = connector.list_columns(SCHEMA, "products")
+    pd.testing.assert_frame_equal(result, columns_df)
 
-    with patch("AnalystStack.connectors.databricks.query.pd.read_sql", side_effect=[schema_df, fillrate_df]):
-        result = connector.get_fillrate(SCHEMA, "products")
-    assert result == {"id": 100.0, "name": 95.5}
+
+def test_list_columns_rejects_invalid_table_reference(connector):
+    with pytest.raises(ValidationError):
+        connector.list_columns(SCHEMA, "bad table!")
+
+
+def test_profile_columns(connector, mock_engine):
+    columns_df = pd.DataFrame(
+        {
+            "table_schema": [SCHEMA] * 2,
+            "table_name": ["products"] * 2,
+            "column_name": ["id", "name"],
+            "ordinal_position": [1, 2],
+            "data_type": ["BIGINT", "STRING"],
+            "is_nullable": ["NO", "YES"],
+            "column_default": [None, None],
+        }
+    )
+    counts_df = pd.DataFrame({"row_count": [100], "id": [100], "name": [95]})
+
+    with patch("AnalystStack.connectors.databricks.query.pd.read_sql", side_effect=[columns_df, counts_df]):
+        result = connector.profile_columns(SCHEMA, "products")
+
+    assert result["row_count"].tolist() == [100, 100]
+    assert result["non_null_count"].tolist() == [100, 95]
+    assert result["null_count"].tolist() == [0, 5]
+    assert result["fill_rate_pct"].tolist() == [100.0, 95.0]
+
+
+def test_profile_columns_rejects_invalid_table_reference(connector):
+    with pytest.raises(ValidationError):
+        connector.profile_columns(SCHEMA, "bad table!")

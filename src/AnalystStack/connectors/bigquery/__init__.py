@@ -1,3 +1,7 @@
+"""Google BigQuery connector: `GoogleBigQueryConnector` and its supporting client/query/
+metadata/profiling managers.
+"""
+
 # Import the main class using a relative import (.)
 from .connector import GoogleBigQueryConnector
 

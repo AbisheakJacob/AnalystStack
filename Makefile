@@ -49,13 +49,13 @@ build: clean
 
 .PHONY: docs
 docs:
-	cd docs; zensical build --clean
+	zensical build --strict --clean
 
 .PHONY: docs-serve
 docs-serve:
-	cd docs; zensical serve
+	zensical serve
 
 .PHONY: clean
 clean:
-	Remove-Item -Recurse -Force build, dist, *.egg-info, src/*.egg-info, docs/site, docs/.cache -ErrorAction SilentlyContinue
+	Remove-Item -Recurse -Force build, dist, *.egg-info, src/*.egg-info, site, .cache -ErrorAction SilentlyContinue
 	Get-ChildItem -Recurse -Include __pycache__, .pytest_cache, .mypy_cache -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue

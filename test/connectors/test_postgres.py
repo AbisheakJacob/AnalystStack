@@ -120,24 +120,74 @@ def test_write_data_wraps_failures(connector, mock_engine, sample_dataframe):
 # ---------------------------------------------------------
 
 
-def test_get_all_table_names(connector, mock_engine):
-    tables_df = pd.DataFrame({"table_name": ["orders", "customers"]})
+def test_list_tables(connector, mock_engine):
+    tables_df = pd.DataFrame(
+        {
+            "table_catalog": ["analytics"],
+            "table_schema": ["public"],
+            "table_name": ["orders"],
+            "table_type": ["BASE TABLE"],
+            "row_count": [1000],
+            "size_bytes": [20480],
+            "created": [pd.NaT],
+            "last_altered": [pd.NaT],
+        }
+    )
     with patch("AnalystStack.connectors.postgres.query.pd.read_sql", return_value=tables_df):
-        result = connector.get_all_table_names("public")
-    assert result == ["orders", "customers"]
+        result = connector.list_tables("public")
+    pd.testing.assert_frame_equal(result, tables_df)
 
 
-def test_get_datatypes(connector, mock_engine):
-    schema_df = pd.DataFrame({"column_name": ["id", "name", "price"], "data_type": ["integer", "text", "numeric"]})
-    with patch("AnalystStack.connectors.postgres.query.pd.read_sql", return_value=schema_df):
-        result = connector.get_datatypes("public", "products")
-    assert result == {"id": "integer", "name": "text", "price": "numeric"}
+def test_list_tables_rejects_invalid_identifier(connector):
+    with pytest.raises(ValidationError):
+        connector.list_tables("bad-schema!")
 
 
-def test_get_fillrate(connector, mock_engine):
-    schema_df = pd.DataFrame({"column_name": ["id", "name"], "data_type": ["integer", "text"]})
-    fillrate_df = pd.DataFrame({"id": [100.0], "name": [95.5]})
+def test_list_columns(connector, mock_engine):
+    columns_df = pd.DataFrame(
+        {
+            "table_schema": ["public"] * 3,
+            "table_name": ["products"] * 3,
+            "column_name": ["id", "name", "price"],
+            "ordinal_position": [1, 2, 3],
+            "data_type": ["integer", "text", "numeric"],
+            "is_nullable": ["NO", "YES", "YES"],
+            "column_default": [None, None, None],
+        }
+    )
+    with patch("AnalystStack.connectors.postgres.query.pd.read_sql", return_value=columns_df):
+        result = connector.list_columns("public", "products")
+    pd.testing.assert_frame_equal(result, columns_df)
 
-    with patch("AnalystStack.connectors.postgres.query.pd.read_sql", side_effect=[schema_df, fillrate_df]):
-        result = connector.get_fillrate("public", "products")
-    assert result == {"id": 100.0, "name": 95.5}
+
+def test_list_columns_rejects_invalid_table_reference(connector):
+    with pytest.raises(ValidationError):
+        connector.list_columns("public", "bad table!")
+
+
+def test_profile_columns(connector, mock_engine):
+    columns_df = pd.DataFrame(
+        {
+            "table_schema": ["public"] * 2,
+            "table_name": ["products"] * 2,
+            "column_name": ["id", "name"],
+            "ordinal_position": [1, 2],
+            "data_type": ["integer", "text"],
+            "is_nullable": ["NO", "YES"],
+            "column_default": [None, None],
+        }
+    )
+    counts_df = pd.DataFrame({"row_count": [100], "id": [100], "name": [95]})
+
+    with patch("AnalystStack.connectors.postgres.query.pd.read_sql", side_effect=[columns_df, counts_df]):
+        result = connector.profile_columns("public", "products")
+
+    assert result["row_count"].tolist() == [100, 100]
+    assert result["non_null_count"].tolist() == [100, 95]
+    assert result["null_count"].tolist() == [0, 5]
+    assert result["fill_rate_pct"].tolist() == [100.0, 95.0]
+
+
+def test_profile_columns_rejects_invalid_table_reference(connector):
+    with pytest.raises(ValidationError):
+        connector.profile_columns("public", "bad table!")
