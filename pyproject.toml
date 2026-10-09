@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "AnalystStack"
-version = "0.2.1"
+version = "0.3.0"
 description = "This package contains functions that help me tackle my day to day data analytics requirements"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
