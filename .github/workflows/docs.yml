@@ -7,6 +7,8 @@ on:
       - "docs/**"
       - "zensical.toml"
       - "src/AnalystStack/**"
+      - "pyproject.toml"
+      - "uv.lock"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
@@ -29,14 +31,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
-          python-version: "3.x"
-          cache: pip
+          version: "0.12.23"
+          enable-cache: true
       - name: Install docs dependencies
-        run: pip install ".[bigquery,postgres,databricks,docs]"
+        run: uv sync --extra bigquery --extra postgres --extra databricks --extra docs
       - name: Build site
-        run: zensical build --strict --clean
+        run: uv run zensical build --strict --clean
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

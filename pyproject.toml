@@ -1,23 +1,115 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-# [tool.black]
-# line-length = 120
-# target-version = ["py313"]
+[project]
+name = "AnalystStack"
+version = "0.2.1"
+description = "This package contains functions that help me tackle my day to day data analytics requirements"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+  { name = "Abisheak Jacob J", email = "abisheakjacob0032@gmail.com" },
+]
+keywords = ["data", "analytics", "pandas", "sql", "etl", "data-quality"]
+dependencies = [
+  "pandas>=2.0",
+  "jinja2>=3.1",
+  "openpyxl>=3.1",
+  "tabulate>=0.9",
+  "sqlfluff>=3.0",
+  "sqlglot>=26.0",
+  "ruff>=0.12",
+]
 
+[project.urls]
+Homepage = "https://github.com/AbisheakJacob/AnalystStack"
+Repository = "https://github.com/AbisheakJacob/AnalystStack"
+Documentation = "https://abisheakjacob.github.io/AnalystStack/"
+Changelog = "https://github.com/AbisheakJacob/AnalystStack/releases"
+
+[project.scripts]
+analyststack = "AnalystStack.cli:main"
+
+[project.optional-dependencies]
+bigquery = [
+  "sqlalchemy>=2.0",
+  "google-cloud-bigquery>=3.0",
+  "sqlalchemy-bigquery>=1.10",
+  "db-dtypes>=1.0",
+]
+postgres = [
+  "sqlalchemy>=2.0",
+  "psycopg2-binary>=2.9",
+]
+databricks = [
+  "sqlalchemy>=2.0",
+  "databricks-sql-connector>=3.0",
+  "databricks-sqlalchemy>=2.0",
+]
+duckdb = [
+  "sqlalchemy>=2.0",
+  "duckdb>=1.0",
+  "duckdb-engine>=0.13",
+]
+snowflake = [
+  "sqlalchemy>=2.0",
+  "snowflake-sqlalchemy>=1.6",
+]
+stats = [
+  "scipy>=1.11",
+]
+pandera = [
+  "pandera>=0.20",
+]
+docs = [
+  "zensical",
+  "mkdocstrings-python",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  "mypy>=1.10",
+  "twine>=5.0",
+  "python-semantic-release>=10.7",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+# ----------------------------------------------------------------------------
+# Packaging
+# ----------------------------------------------------------------------------
+[tool.hatch.build.targets.wheel]
+packages = ["src/AnalystStack"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/AnalystStack",
+  "test",
+  "README.md",
+  "LICENSE",
+]
+
+# ----------------------------------------------------------------------------
+# Formatting / linting
+# ----------------------------------------------------------------------------
 [tool.ruff]
 line-length = 120
 target-version = "py313"
 
 [tool.ruff.lint]
 select = [
-    "E",
-    "F",
-    "I",
-    "B",
-    "UP",
-    "SIM",
+  "E",
+  "F",
+  "I",
+  "B",
+  "UP",
+  "SIM",
 ]
 
 ignore = []
@@ -27,3 +119,62 @@ quote-style = "double"
 indent-style = "space"
 line-ending = "auto"
 
+# ----------------------------------------------------------------------------
+# Testing / coverage
+# ----------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["test"]
+addopts = [
+  "--cov",
+  "--strict-markers",
+  "--disable-warnings",
+]
+xfail_strict = true
+
+[tool.coverage.run]
+branch = true
+source = ["AnalystStack"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.coverage.paths]
+source = [
+  "src/AnalystStack",
+  "*/site-packages/AnalystStack",
+]
+
+# ----------------------------------------------------------------------------
+# Typing
+# ----------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.13"
+warn_unused_configs = true
+show_error_context = true
+pretty = true
+namespace_packages = true
+check_untyped_defs = true
+
+warn_return_any = true
+warn_unused_ignores = true
+no_implicit_optional = true
+
+# ----------------------------------------------------------------------------
+# Release automation (python-semantic-release)
+# ----------------------------------------------------------------------------
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+tag_format = "v{version}"
+commit_parser = "conventional"
+allow_zero_version = true
+commit_author = "github-actions <actions@github.com>"
+build_command = """
+uv lock --upgrade-package "$PACKAGE_NAME"
+git add uv.lock
+uv build
+"""
+
+[tool.semantic_release.branches.main]
+match = "(main|master)"
+prerelease = false

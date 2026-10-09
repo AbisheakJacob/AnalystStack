@@ -1,6 +1,7 @@
 """Execute SQL in DuckDB: Read and Write data"""
 
 import pandas as pd
+from sqlalchemy import text
 
 from AnalystStack.connectors.duckdb.client import DuckDBClientWrapper
 from AnalystStack.exceptions.errors import QueryExecutionError
@@ -65,7 +66,16 @@ class QueryManager:
 
         try:
             logger.info(f"Writing {len(df)} rows to {table_ref} ({if_exists})...")
-            df.to_sql(name=table_id, con=self.wrapper.engine, schema=schema, if_exists=if_exists, index=False)
+            if if_exists == "replace":
+                # Drop explicitly: pandas' to_sql("replace") reflects the table via
+                # SQLAlchemy's PostgreSQL reflection query, which references
+                # pg_catalog.pg_collation.collnamespace -- unimplemented by DuckDB's
+                # pg_catalog emulation (SQLAlchemy >= 2.0.45), raising a BinderError.
+                with self.wrapper.engine.begin() as conn:
+                    conn.execute(text(f'DROP TABLE IF EXISTS "{schema}"."{table_id}"'))
+                df.to_sql(name=table_id, con=self.wrapper.engine, schema=schema, if_exists="append", index=False)
+            else:
+                df.to_sql(name=table_id, con=self.wrapper.engine, schema=schema, if_exists=if_exists, index=False)
             logger.info(f"Write complete for {table_ref}.")
         except Exception as e:
             logger.exception(f"Failed to write DataFrame to {table_ref}")

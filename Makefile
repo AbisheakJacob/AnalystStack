@@ -1,19 +1,31 @@
 # =========================================================
-# AnalystStack — developer tasks (Windows / PowerShell)
+# AnalystStack — developer tasks (uv, Windows / PowerShell)
 # =========================================================
 
 SHELL := powershell.exe
 .SHELLFLAGS := -NoProfile -ExecutionPolicy Bypass -Command
 
-PYTHON := python
+UV := uv
+PYTHON_VERSION := 3.13
 
 # =========================================================
 # Environment
 # =========================================================
 
+.PHONY: python
+python:
+	$(UV) python install $(PYTHON_VERSION)
+
+.PHONY: sync
+sync:
+	$(UV) sync --all-extras
+
+.PHONY: lock
+lock:
+	$(UV) lock
+
 .PHONY: install
-install:
-	$(PYTHON) -m pip install -e ".[dev,bigquery]"
+install: sync
 
 # =========================================================
 # Quality
@@ -21,23 +33,26 @@ install:
 
 .PHONY: format
 format:
-	ruff format src/AnalystStack test
+	$(UV) run ruff format src/AnalystStack test
+
+.PHONY: format-check
+format-check:
+	$(UV) run ruff format --check src/AnalystStack test
 
 .PHONY: lint
 lint:
-# 	flake8 src/AnalystStack test
-	ruff check src/AnalystStack test --fix
+	$(UV) run ruff check src/AnalystStack test --fix
 
 .PHONY: typecheck
 typecheck:
-	mypy --ignore-missing-imports src/AnalystStack test
+	$(UV) run mypy --ignore-missing-imports src/AnalystStack test
 
 .PHONY: test
 test:
-	pytest
+	$(UV) run pytest
 
 .PHONY: check
-check: format lint typecheck test
+check: format-check lint typecheck test
 
 # =========================================================
 # Build / docs
@@ -45,15 +60,15 @@ check: format lint typecheck test
 
 .PHONY: build
 build: clean
-	$(PYTHON) -m build
+	$(UV) build
 
 .PHONY: docs
 docs:
-	zensical build --strict --clean
+	$(UV) run zensical build --strict --clean
 
 .PHONY: docs-serve
 docs-serve:
-	zensical serve
+	$(UV) run zensical serve
 
 .PHONY: clean
 clean:

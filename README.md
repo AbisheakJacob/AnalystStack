@@ -143,24 +143,29 @@ analyststack format sql    path/to/query.sql --dialect postgres --level low   # 
 
 ## Development
 
+This project is managed with [uv](https://docs.astral.sh/uv/) and targets **Python 3.13**.
+
 ```bash
 git clone https://github.com/AbisheakJacob/AnalystStack
 cd AnalystStack
-pip install -r requirements.txt        # editable install with dev + bigquery extras
+uv sync --all-extras     # create .venv and install dev deps + every connector extra
 ```
 
-Common tasks (see the `Makefile`):
+`uv` reads the pinned interpreter from `.python-version` and installs it if needed
+(`uv python install 3.13`).
+
+Common tasks (see the `Makefile`, or run the commands directly with `uv run ...`):
 
 | Command | Description |
 | ------- | ----------- |
+| `make sync` | Create/update `.venv` with all extras (`uv sync --all-extras`). |
 | `make check` | Run format, lint, type-check and tests. |
-| `make test` | Run the test suite with coverage. |
+| `make test` | Run the test suite with coverage (`uv run pytest`). |
 | `make format` / `make lint` / `make typecheck` | Individual quality gates. |
-| `make build` | Build the sdist and wheel. |
+| `make build` | Build the sdist and wheel (`uv build`). |
 | `make docs` | Build the documentation site. |
 
-The same gates run in CI via [tox](https://tox.wiki/) (`tox -e format,lint,typecheck`,
-`tox -e py312,py313`).
+The same gates run in CI with uv (`.github/workflows/workflow.yml`).
 
 ## Roadmap
 
