@@ -16,3 +16,11 @@ class QueryExecutionError(DataPackageError):
 
 class ValidationError(DataPackageError):
     """Raised when input validation fails (e.g., malformed table names)."""
+
+
+class PathPolicyError(DataPackageError):
+    """Raised when a file path is refused by the workspace path policy."""
+
+
+class ReadOnlyViolationError(ValidationError):
+    """Raised when SQL is refused because it is not a single, side-effect-free read."""

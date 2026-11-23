@@ -32,6 +32,7 @@ nav = [
   { "Validation" = "validate.md" },
   { "Reporting" = "report.md" },
   { "Formatting" = "formatting.md" },
+  { "Command line" = "cli.md" },
   { "Roadmap / Next steps" = "next-steps.md" },
 ]
 

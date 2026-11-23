@@ -1,10 +1,16 @@
 """The ``analyststack`` command-line entry point.
 
 Installed as the console script ``analyststack`` (see the ``[options.entry_points]``
-section of ``setup.cfg``). Currently exposes a single ``format`` command that lints or
-formats a Python or SQL file, backed by
-:class:`~AnalystStack.format.python.PythonFormatter` /
-:class:`~AnalystStack.format.sql.SQLFormatter`.
+section of ``setup.cfg``). Command groups:
+
+* ``format``: lint or format a Python or SQL file, backed by
+  :class:`~AnalystStack.format.python.PythonFormatter` /
+  :class:`~AnalystStack.format.sql.SQLFormatter` (defined in this module);
+* ``env``, ``db``, ``io``, ``data``, ``report``, ``excel``: see `AnalystStack.commands`.
+
+Every file the CLI reads or writes first goes through the path policy in `AnalystStack.paths`.
+Exit codes: ``0`` success, ``1`` an expected failure, ``2`` blocked by policy or the read-only
+SQL guard.
 
 Example:
     ```bash
@@ -12,6 +18,7 @@ Example:
     analyststack format sql    path/to/query.sql --lint                           # lint only, non-zero exit on errors
     analyststack format sql    path/to/query.sql --dialect postgres --level low   # light touch-up only
     analyststack format sql    path/to/query.sql --dialect databricks --level destructive
+    analyststack db query --connection fl_pg --title "Store list" --description "Lists active stores" --sql "SELECT 1"
     ```
 """
 
@@ -19,7 +26,12 @@ import argparse
 import os
 import sys
 
+from AnalystStack.commands import register_all
+from AnalystStack.commands._common import EXIT_BLOCKED
+from AnalystStack.exceptions.errors import PathPolicyError
 from AnalystStack.format import FormattingLevel, PythonFormatter, SQLFormatter
+from AnalystStack.paths import check_read, check_write
+from AnalystStack.utils.logging import set_quiet
 
 _DEFAULT_SQLFLUFF_CONFIG = ".sqlfluff"
 
@@ -90,6 +102,12 @@ def handle_format(args: argparse.Namespace) -> None:
             missing, lint violations were found, or formatting failed.
     """
     file_path = args.file
+    try:
+        # Policy first: refuse env files, other folders' files and protected folders before opening anything.
+        file_path = str(check_read(file_path) if args.lint else check_write(file_path))
+    except PathPolicyError as exc:
+        print(f"ERROR: blocked: {exc}", file=sys.stderr)
+        sys.exit(EXIT_BLOCKED)
     if not os.path.exists(file_path):
         print(f"Error: File not found at {file_path}")
         sys.exit(1)
@@ -140,7 +158,10 @@ def main() -> None:
     )
     format_parser.set_defaults(func=handle_format)
 
+    register_all(subparsers)
+
     args = parser.parse_args()
+    set_quiet(os.environ.get("ANALYSTSTACK_DEBUG") != "1")
     args.func(args)
 
 

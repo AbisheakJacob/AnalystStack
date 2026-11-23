@@ -16,6 +16,7 @@ Exports:
     - `DuckDBConnector`: Connector for embedded/local DuckDB, via ``duckdb-engine``. The only
         connector requiring zero configuration.
     - `SnowflakeConnector`: Connector for Snowflake, via ``snowflake-sqlalchemy``.
+    - `ClickHouseConnector`: Read-only connector for ClickHouse, via ``clickhouse-connect``.
 
 Example:
     ```python
@@ -29,6 +30,7 @@ Example:
 
 from .base import BaseConnector
 from .bigquery import GoogleBigQueryConnector
+from .clickhouse import ClickHouseConnector
 from .databricks import DatabricksConnector
 from .duckdb import DuckDBConnector
 from .postgres import PostgresConnector
@@ -36,6 +38,7 @@ from .snowflake import SnowflakeConnector
 
 __all__ = [
     "BaseConnector",
+    "ClickHouseConnector",
     "DatabricksConnector",
     "DuckDBConnector",
     "GoogleBigQueryConnector",

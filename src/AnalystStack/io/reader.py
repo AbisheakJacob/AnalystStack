@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from jinja2 import Environment, FileSystemLoader, StrictUndefined
+from jinja2 import FileSystemLoader, StrictUndefined
+from jinja2.sandbox import SandboxedEnvironment
 
 from AnalystStack.io.utils import parse_excel_cell
 from AnalystStack.utils.logging import get_logger
@@ -159,7 +160,9 @@ class DataReader:
         producing an empty string — handy for catching typos in query parameters.
         Autoescaping is off, which is what you want when rendering SQL or other
         plain text (unlike HTML, where autoescaping normally guards against
-        injection).
+        injection). Templates run in a `jinja2.sandbox.SandboxedEnvironment`, so a template
+        cannot reach Python internals (``''.__class__`` and similar are refused); this matters
+        because the ``analyststack io render`` command renders text it is given.
 
         Args:
             source: Path to a template file or an inline template string.
@@ -192,7 +195,7 @@ class DataReader:
         if os.path.isfile(source):
             path = Path(source)
             logger.info(f"Rendering Jinja template file: {source}")
-            env = Environment(
+            env = SandboxedEnvironment(
                 loader=FileSystemLoader(str(path.parent)),
                 undefined=StrictUndefined,
                 keep_trailing_newline=True,
@@ -201,7 +204,7 @@ class DataReader:
             template = env.get_template(path.name)
         else:
             logger.info("Rendering Jinja template from inline string.")
-            env = Environment(
+            env = SandboxedEnvironment(
                 undefined=StrictUndefined,
                 keep_trailing_newline=True,
                 autoescape=False,
