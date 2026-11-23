@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.4.0 (2026-11-23)
+
+### Features
+
+- Add ClickHouse connector, CLI commands and read-only SQL guard
+  ([`fec0f71`](https://github.com/AbisheakJacob/AnalystStack/commit/fec0f719374ec7abc997defde3901d199d8811e1))
+
+
 ## v0.3.0 (2026-10-09)
 
 ### Features
